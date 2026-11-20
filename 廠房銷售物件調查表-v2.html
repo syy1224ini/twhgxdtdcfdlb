@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>廠房(銷售)物件調查表</title>
+<style>
+
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  overflow-x: auto !important; /* 允許整個頁面在水平方向上滾動 */
+  -webkit-overflow-scrolling: touch;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #eee;
+  min-width: 23cm; /* 21cm (A4寬) + 左右留白 + 按鈕空間 */
+}
+.page {
+  position: relative;
+  width: 21cm;
+  min-height: 29.7cm;
+  background: #fff;
+  padding: 0.7cm 0.5cm 0.5cm 0.5cm;
+  box-sizing: border-box;
+  box-shadow: 0 0 8px rgba(0,0,0,0.15);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+td {
+  border: 1px solid #000;
+  text-align: center;
+  vertical-align: middle;
+  font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
+  font-size: 13px;
+  padding: 1px 2px;
+  box-sizing: border-box;
+  line-height: 1.25;
+}
+
+@page { size: A4 portrait; margin: 0; }
+@media print {
+  body { background: #fff; min-width: auto; }
+  .page { box-shadow: none; width: 21cm; height: 29.7cm; padding: 0.6cm 0.5cm 0.4cm 0.5cm; }
+  #ptools { display: none !important; }
+
+  /* 隱藏框線但保留文字 */
+  input[type="text"],
+  textarea,
+  .ipt {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+}
+
+#ptools {
+  position: absolute;
+  right: -5.5cm;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 9999;
+}
+
+#ptools .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#ptools button {
+  padding: 18px 26px;
+  font-size: 24px;
+  font-family: "Microsoft JhengHei", Arial, sans-serif;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+#ptools button:hover {
+  background: #f5f5f5;
+}
+
+/* 標題列樣式 */
+.title-row td {
+  border: none !important;
+  padding-bottom: 6px;
+}
+.brand-title {
+  text-align: left !important;
+  font-size: 26px !important;
+  font-weight: bold;
+  color: #E36C0A;
+  letter-spacing: 1px;
+}
+.form-title {
+  text-align: right !important;
+  font-size: 23px !important;
+  font-weight: bold;
+  color: #000;
+  letter-spacing: 1px;
+}
+
+.keep-top-border td {
+  border-top: 1px solid #000 !important;
+}
+
+/* 文字與欄位輔助樣式 */
+.lbl {
+  font-weight: bold;
+  color: #000;
+}
+.lbl-blue {
+  font-weight: bold;
+  color: #142DA0;
+}
+.lbl-red {
+  font-weight: bold;
+  color: #B41E1E;
+}
+.tl {
+  text-align: left;
+}
+.tr {
+  text-align: right;
+}
+.vt {
+  vertical-align: top;
+}
+
+/* 輸入框樣式 */
+.ipt {
+  border: 1px solid #888;
+  border-radius: 2px;
+  font-family: "Microsoft JhengHei", Arial, sans-serif;
+  font-size: 13px;
+  padding: 1px 3px;
+  box-sizing: border-box;
+  background: #fff;
+  height: 20px;
+}
+.ipt-cell {
+  width: 96%;
+  height: 20px;
+  text-align: center;
+}
+.ipt-cell-left {
+  width: 97%;
+  height: 20px;
+  text-align: left;
+}
+.ipt-num {
+  width: 72%;
+  height: 20px;
+  text-align: right;
+}
+.ipt-sm {
+  width: 42px;
+  height: 19px;
+  text-align: center;
+}
+.ipt-md {
+  width: 65px;
+  height: 19px;
+  text-align: center;
+}
+.ipt-lg {
+  width: 110px;
+  height: 19px;
+  text-align: left;
+}
+textarea.ipt {
+  resize: none;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.3;
+}
+
+.cbx {
+  width: 13px;
+  height: 13px;
+  vertical-align: middle;
+  margin: 0 2px 2px 4px;
+  cursor: pointer;
+}
+.cbx:first-child {
+  margin-left: 0;
+}
+
+/* 簽章與帶看區塊 */
+.sign-cell {
+  vertical-align: top !important;
+  text-align: left !important;
+  padding: 4px 6px !important;
+}
+.sign-label {
+  color: #8C8C8C;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.pledge-cell {
+  text-align: left !important;
+  vertical-align: middle !important;
+  padding: 5px 7px !important;
+  font-size: 13px;
+  line-height: 1.45;
+  text-indent: 2em;
+}
+
+/* 無中間框線輔助（用於「數值 + 單位」同一邏輯欄） */
+.no-r { border-right: none !important; }
+.no-l { border-left: none !important; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<table>
+  <!-- 33等分欄寬定義，對應原始Word表格結構 -->
+  <colgroup>
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%"><col style="width:3.03%">
+    <col style="width:3.04%">
+  </colgroup>
+
+  <!-- 標題列 -->
+  <tr class="title-row" style="height:42px;">
+    <td colspan="17" class="brand-title">台灣房屋鑫典團隊</td>
+    <td colspan="16" class="form-title">廠房(銷售)物件調查表</td>
+  </tr>
+
+  <!-- 基本資料列 1 -->
+  <tr class="keep-top-border" style="height:30px;">
+    <td colspan="3" class="lbl">案名</td>
+    <td colspan="7"><input type="text" class="ipt ipt-cell-left"></td>
+    <td colspan="5" class="lbl">營業員</td>
+    <td colspan="6"><input type="text" class="ipt ipt-cell-left"></td>
+    <td colspan="4" class="lbl">日期</td>
+    <td colspan="8"><input type="text" class="ipt ipt-cell-left"></td>
+  </tr>
+
+  <!-- 基本資料列 2 -->
+  <tr style="height:30px;">
+    <td colspan="3" class="lbl">案址</td>
+    <td colspan="18"><input type="text" class="ipt ipt-cell-left"></td>
+    <td colspan="4" class="lbl">售價</td>
+    <td colspan="6" class="no-r tr"><input type="text" class="ipt" style="width:94%; text-align:right;"></td>
+    <td colspan="2" class="no-l lbl tr" style="padding-right:6px;">萬</td>
+  </tr>
+
+  <!-- 土地標示部 & 總使用空間 標題 -->
+  <tr style="height:26px;">
+    <td colspan="23" class="lbl">土地標示部</td>
+    <td colspan="10" class="lbl">總使用空間</td>
+  </tr>
+  <tr style="height:26px;">
+    <td colspan="5" class="lbl">段號</td>
+    <td colspan="5" class="lbl">地號</td>
+    <td colspan="5" class="lbl">使用分區</td>
+    <td colspan="4" class="lbl">平方公尺</td>
+    <td colspan="4" class="lbl">坪數</td>
+    <td colspan="2" class="lbl">樓層</td>
+    <td colspan="4" class="lbl">結構</td>
+    <td colspan="4" class="lbl">坪數</td>
+  </tr>
+
+  <!-- 土地標示部 & 總使用空間 資料列 1~6 -->
+  <tr style="height:24px;">
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+  </tr>
+  <tr style="height:24px;">
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+  </tr>
+  <tr style="height:24px;">
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+  </tr>
+  <tr style="height:24px;">
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+  </tr>
+  <tr style="height:24px;">
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+  </tr>
+  <tr style="height:24px;">
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+  </tr>
+  <!-- 第7列 + 建物總使用坪數 -->
+  <tr style="height:24px;">
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="6" class="lbl-blue">建物總使用坪數</td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+  <!-- 土地總登記坪數 & 建物總登記坪數 -->
+  <tr style="height:25px;">
+    <td colspan="14" class="lbl-red">土地總登記坪數</td>
+    <td colspan="9"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="6" class="lbl-red">建物總登記坪數</td>
+    <td colspan="4"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+
+  <!-- 第一棟 / 第二棟 / 第三棟 -->
+  <tr style="height:26px;">
+    <td colspan="5" class="lbl">第一棟</td>
+    <td colspan="6" class="lbl">屋齡 <input type="text" class="ipt ipt-sm"> 年</td>
+    <td colspan="5" class="lbl">第二棟</td>
+    <td colspan="6" class="lbl">屋齡 <input type="text" class="ipt ipt-sm"> 年</td>
+    <td colspan="5" class="lbl">第三棟</td>
+    <td colspan="6" class="lbl">屋齡 <input type="text" class="ipt ipt-sm"> 年</td>
+  </tr>
+  <tr style="height:25px;">
+    <td colspan="2" class="lbl">樓層</td>
+    <td colspan="3" class="lbl">結構</td>
+    <td colspan="3" style="font-size:12px;">平方公尺</td>
+    <td colspan="3" class="lbl">坪數</td>
+    <td colspan="2" class="lbl">樓層</td>
+    <td colspan="3" class="lbl">結構</td>
+    <td colspan="3" style="font-size:12px;">平方公尺</td>
+    <td colspan="3" class="lbl">坪數</td>
+    <td colspan="2" class="lbl">樓層</td>
+    <td colspan="3" class="lbl">結構</td>
+    <td colspan="3" style="font-size:12px;">平方公尺</td>
+    <td colspan="3" class="lbl">坪數</td>
+  </tr>
+
+  <!-- 建物樓層明細 6 列 -->
+  <tr style="height:23px;">
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+  <tr style="height:23px;">
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+  <tr style="height:23px;">
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+  <tr style="height:23px;">
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+  <tr style="height:23px;">
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+  <tr style="height:23px;">
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="2"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="3"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+
+  <!-- 各棟建物登記坪數 -->
+  <tr style="height:24px;">
+    <td colspan="6" class="lbl-red">建物登記坪數</td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="6" class="lbl-red">建物登記坪數</td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+    <td colspan="6" class="lbl-red">建物登記坪數</td>
+    <td colspan="5"><input type="text" class="ipt ipt-cell tr" placeholder="-"></td>
+  </tr>
+
+  <!-- 屋頂 / 面寬 -->
+  <tr style="height:25px;">
+    <td colspan="2" class="lbl">屋頂</td>
+    <td colspan="3" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:65%; text-align:right;"> <span class="lbl">米</span></td>
+    <td colspan="2" class="lbl">面寬</td>
+    <td colspan="4" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:72%; text-align:right;"> <span class="lbl">米</span></td>
+
+    <td colspan="2" class="lbl">屋頂</td>
+    <td colspan="3" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:65%; text-align:right;"> <span class="lbl">米</span></td>
+    <td colspan="2" class="lbl">面寬</td>
+    <td colspan="4" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:72%; text-align:right;"> <span class="lbl">米</span></td>
+
+    <td colspan="2" class="lbl">屋頂</td>
+    <td colspan="3" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:65%; text-align:right;"> <span class="lbl">米</span></td>
+    <td colspan="2" class="lbl">面寬</td>
+    <td colspan="4" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:72%; text-align:right;"> <span class="lbl">米</span></td>
+  </tr>
+
+  <!-- 樑下 / 深度 -->
+  <tr style="height:25px;">
+    <td colspan="2" class="lbl">樑下</td>
+    <td colspan="3" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:65%; text-align:right;"> <span class="lbl">米</span></td>
+    <td colspan="2" class="lbl">深度</td>
+    <td colspan="4" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:72%; text-align:right;"> <span class="lbl">米</span></td>
+
+    <td colspan="2" class="lbl">樑下</td>
+    <td colspan="3" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:65%; text-align:right;"> <span class="lbl">米</span></td>
+    <td colspan="2" class="lbl">深度</td>
+    <td colspan="4" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:72%; text-align:right;"> <span class="lbl">米</span></td>
+
+    <td colspan="2" class="lbl">樑下</td>
+    <td colspan="3" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:65%; text-align:right;"> <span class="lbl">米</span></td>
+    <td colspan="2" class="lbl">深度</td>
+    <td colspan="4" class="tr" style="padding-right:3px;"><input type="text" class="ipt" style="width:72%; text-align:right;"> <span class="lbl">米</span></td>
+  </tr>
+
+  <!-- 座向 / 相約地點 / 帶看日期 / 帶看專員 -->
+  <tr style="height:27px;">
+    <td colspan="4" class="lbl">座　向</td>
+    <td colspan="6" class="lbl">朝 <input type="text" class="ipt" style="width:68%; text-align:center;"></td>
+    <td colspan="4" class="lbl">相約地點</td>
+    <td colspan="7"><input type="text" class="ipt ipt-cell-left"></td>
+    <td colspan="7" rowspan="2" class="sign-cell">
+      <div class="sign-label">帶看日期</div>
+      
+    </td>
+    <td colspan="5" rowspan="2" class="sign-cell">
+      <div class="sign-label">帶看專員</div>
+      
+    </td>
+  </tr>
+
+  <!-- 增值稅 / 設定貸款 -->
+  <tr style="height:27px;">
+    <td colspan="4" class="lbl">增值稅</td>
+    <td colspan="6" class="tr" style="padding-right:4px;"><input type="text" class="ipt" style="width:72%; text-align:right;"> <span class="lbl">萬</span></td>
+    <td colspan="4" class="lbl">設定貸款</td>
+    <td colspan="7" class="tr" style="padding-right:4px;"><input type="text" class="ipt" style="width:76%; text-align:right;"> <span class="lbl">萬</span></td>
+  </tr>
+
+  <!-- 工廠登記 / 活巷 / 切結書文字 -->
+  <tr style="height:27px;">
+    <td colspan="4" class="lbl">工廠登記</td>
+    <td colspan="6" class="lbl"><input type="checkbox" class="cbx">可　<input type="checkbox" class="cbx">否</td>
+    <td colspan="4" class="lbl">活　巷</td>
+    <td colspan="7" class="lbl"><input type="checkbox" class="cbx">是　<input type="checkbox" class="cbx">否</td>
+    <td colspan="12" rowspan="4" class="pledge-cell">
+      本著誠信原則，本人保證絕不私底下或以規避台灣房屋鑫典團隊的方式以本人或本人親屬及本人所屬公司行號成交上述之不動產，若有違背願支付仲介經紀條例所規定之最高成交價的６％作為仲介服務費。絕無異議。
+    </td>
+  </tr>
+
+  <!-- 分割 / 前手行業 -->
+  <tr style="height:27px;">
+    <td colspan="4" class="lbl">分　割</td>
+    <td colspan="6" class="lbl"><input type="checkbox" class="cbx">是　<input type="checkbox" class="cbx">否</td>
+    <td colspan="4" class="lbl">前手行業</td>
+    <td colspan="7"><input type="text" class="ipt ipt-cell-left"></td>
+  </tr>
+
+  <!-- 使用電力 / 臨路巷寬 -->
+  <tr style="height:27px;">
+    <td colspan="4" class="lbl">使用電力</td>
+    <td colspan="6"><input type="text" class="ipt ipt-cell-left"></td>
+    <td colspan="4" class="lbl">臨路巷寬</td>
+    <td colspan="7" class="tr" style="padding-right:4px;"><input type="text" class="ipt" style="width:76%; text-align:right;"> <span class="lbl">米</span></td>
+  </tr>
+
+  <!-- 廠內設備 1 (天車 / 吊車) -->
+  <tr style="height:27px;">
+    <td colspan="4" rowspan="2" class="lbl">廠內設備</td>
+    <td colspan="6" class="tl lbl" style="padding-left:4px;"><input type="checkbox" class="cbx">天車：<input type="text" class="ipt ipt-sm"> 部</td>
+    <td colspan="11" class="tl lbl" style="padding-left:4px;"><input type="checkbox" class="cbx">吊車：<input type="text" class="ipt ipt-md"> 部</td>
+  </tr>
+
+  <!-- 廠內設備 2 (貨梯 / 其他) / 屋主簽章 / 客戶簽章 -->
+  <tr style="height:27px;">
+    <td colspan="6" class="tl lbl" style="padding-left:4px;"><input type="checkbox" class="cbx">貨梯：<input type="text" class="ipt ipt-sm"> 部</td>
+    <td colspan="11" class="tl lbl" style="padding-left:4px;"><input type="checkbox" class="cbx">其他：<input type="text" class="ipt" style="width:145px;"></td>
+    <td colspan="7" rowspan="3" class="sign-cell">
+      <div class="sign-label">屋主簽章</div>
+    </td>
+    <td colspan="5" rowspan="3" class="sign-cell">
+      <div class="sign-label">客戶簽章</div>
+    </td>
+  </tr>
+
+  <!-- 目前現況 1 -->
+  <tr style="height:27px;">
+    <td colspan="4" rowspan="2" class="lbl">目前現況</td>
+    <td colspan="10" class="tl lbl" style="padding-left:4px;"><input type="checkbox" class="cbx">閒置 <input type="checkbox" class="cbx">自用 <input type="checkbox" class="cbx">出租</td>
+    <td colspan="7" class="tl lbl" style="padding-left:4px;">約期 <input type="text" class="ipt ipt-md"> 年</td>
+  </tr>
+
+  <!-- 目前現況 2 (月租金 / 租期) -->
+  <tr style="height:27px;">
+    <td colspan="4" class="lbl">月租金</td>
+    <td colspan="6"><input type="text" class="ipt ipt-cell tr"></td>
+    <td colspan="7" class="tl lbl" style="padding-left:4px;">租期 <input type="text" class="ipt" style="width:105px;"></td>
+  </tr>
+
+  <!-- 周邊交通 / 案件優點 / 備註 -->
+  <tr style="height:34px;">
+    <td colspan="4" class="lbl">周邊交通</td>
+    <td colspan="29"><textarea class="ipt" style="width:98.5%; height:26px;"></textarea></td>
+  </tr>
+  <tr style="height:34px;">
+    <td colspan="4" class="lbl">案件優點</td>
+    <td colspan="29"><textarea class="ipt" style="width:98.5%; height:26px;"></textarea></td>
+  </tr>
+  <tr style="height:38px;">
+    <td colspan="4" class="lbl">備　註</td>
+    <td colspan="29"><textarea class="ipt" style="width:98.5%; height:30px;"></textarea></td>
+  </tr>
+
+</table>
+
+<div id="ptools">
+  <div class="stack">
+    <button id="clearBtn" type="button">全部清除</button>
+    <button onclick="window.print()">列印</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+  document.getElementById('clearBtn')?.addEventListener('click', function () {
+    const container = document.querySelector('.page') || document;
+
+    container.querySelectorAll('input').forEach(el => {
+      const type = (el.type || '').toLowerCase();
+      if (type === 'checkbox' || type === 'radio') {
+        el.checked = false;
+      } else {
+        el.value = '';
+      }
+    });
+
+    container.querySelectorAll('textarea').forEach(el => el.value = '');
+    container.querySelectorAll('[contenteditable="true"]').forEach(el => el.innerText = '');
+  });
+</script>
+
+</body>
+</html>
